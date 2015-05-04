@@ -1,0 +1,11 @@
+#!/bin/sh
+echo "Build starting"
+rm -rf dist
+rm -rf resources/*.o
+ld -r -m elf_i386 -b binary -o resources/database.o resources/database.sql
+ld -r -m elf_i386 -b binary -o resources/install.o resources/install.php
+ld -r -m elf_i386 -b binary -o resources/language.o resources/language.php
+ld -r -m elf_i386 -b binary -o resources/config.o resources/config.json
+mkdir dist
+gcc -m32 -o dist/ppinstaller resources/*.o src/*.c
+echo "Build process complete"

@@ -7,6 +7,7 @@
 #define _POSIX_C_SOURCE 2
 #define _XOPEN_SOURCE 700
 #include "main.h"
+#include "common.h"
 #include <dirent.h>
 #include <mysql/mysql.h>
 #include <stdarg.h>
@@ -35,11 +36,26 @@ FILE *logFile;
  */
 int main(int argc, char** argv) {
 
+    logFile = fopen("ppinstaller.log", "w");
+    logOut("PufferPanel Installer - Version C-0.0.1\n");
+
     const char* ppversion = NULL;
     bool useDev = false;
     bool testInstall = false;
     char* installPath = "PufferPanel";
-    char* installUser = "apache";
+    char* installUser;
+    char* distro = getDistro();
+    if (isEqual(distro, "ubuntu")) {
+        installUser = "www-data";
+    } else if (isEqual(distro, "debian")) {
+        installUser = "www-data";
+    } else if (isEqual(distro, "unknown")) {
+        fprintf(logFile, "OS does not support /etc/os-release information, defaulting user to apache\n");
+        installUser = "apache";
+    } else {
+        installUser = "apache";
+    }
+
     bool doLangOnly = false;
     bool doConfigOnly = false;
 
@@ -48,9 +64,9 @@ int main(int argc, char** argv) {
      */
     int i = 1;
     while (i < argc) {
-        if (strcmp(argv[i], "-d") == 0) {
+        if (isEqual(argv[i], "-d")) {
             useDev = true;
-        } else if (strcmp(argv[i], "-u") == 0) {
+        } else if (isEqual(argv[i], "-u")) {
             if (i + 1 < argc - 1) {
                 printUsage(argv[0]);
                 return (EXIT_FAILURE);
@@ -58,11 +74,11 @@ int main(int argc, char** argv) {
                 i++;
                 installUser = argv[i];
             }
-        } else if (strcmp(argv[i], "-t") == 0) {
+        } else if (isEqual(argv[i], "-t")) {
             testInstall = true;
-        } else if (strcmp(argv[i], "-l") == 0) {
+        } else if (isEqual(argv[i], "-l")) {
             doLangOnly = true;
-        } else if (strcmp(argv[i], "-p") == 0) {
+        } else if (isEqual(argv[i], "-p")) {
             if (i + 1 < argc - 1) {
                 printUsage(argv[0]);
                 return (EXIT_FAILURE);
@@ -70,13 +86,13 @@ int main(int argc, char** argv) {
                 i++;
                 installPath = argv[i];
             }
-        } else if (strcmp(argv[i], "-v") == 0) {
+        } else if (isEqual(argv[i], "-v")) {
             printf("PufferPanel Installer - Version C-0.0.1\n");
             return (EXIT_SUCCESS);
-        } else if (strcmp(argv[i], "-h") == 0) {
+        } else if (isEqual(argv[i], "-h")) {
             printUsage(argv[0]);
             return (EXIT_SUCCESS);
-        } else if (strcmp(argv[i], "-c") == 0) {
+        } else if (isEqual(argv[i], "-c")) {
             doConfigOnly = true;
         } else {
             printUsage(argv[0]);
@@ -84,9 +100,6 @@ int main(int argc, char** argv) {
         }
         i++;
     }
-
-    logFile = fopen("ppinstaller.log", "w");
-    logOut("PufferPanel Installer - Version C-0.0.1\n");
 
     fprintf(logFile, "Using dev build: %s\n", useDev ? "true" : "false");
     fprintf(logFile, "Testing install: %s\n", testInstall ? "true" : "false");
@@ -295,7 +308,7 @@ bool buildLang(const char* path) {
     if ((dir = opendir(concat(2, fullPath, "raw/"))) != NULL) {
         while ((ent = readdir(dir)) != NULL) {
             char* name = ent->d_name;
-            if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
+            if (isEqual(name, ".") || isEqual(name, "..")) {
                 continue;
             }
             char lang[3];

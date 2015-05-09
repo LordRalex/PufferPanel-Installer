@@ -12,7 +12,7 @@
 #include <stdbool.h>
 
 void printUsage(char* file);
-int innerMain(bool useDev, bool testInstall, bool doLangOnly, bool doConfigOnly, char* installPath, char* installUser, const char* ppversion);
+int innerMain(bool testInstall, bool doLangOnly, bool doConfigOnly, char* installPath, char* installUser, const char* ppversion);
 
 #endif
 

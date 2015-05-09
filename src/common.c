@@ -30,3 +30,27 @@ char* getDistro() {
 bool isEqual(const char* str1, const char* str2) {
     return strcmp(str1, str2) == 0;
 }
+
+char* concat(int size, ...) {
+    va_list ap;
+    va_start(ap, size);
+    int i = 0;
+    int length = 1;
+    int s;
+    while (i < size) {
+        char* arg = va_arg(ap, char*);
+        length += strlen(arg);
+        i++;
+    }
+    va_end(ap);
+    va_start(ap, size);
+    char* newBuffer = (char*) malloc(length);
+    i = 1;
+    strcpy(newBuffer, va_arg(ap, char*));
+    while (i < size) {
+        strcat(newBuffer, va_arg(ap, char*));
+        i++;
+    }
+    va_end(ap);
+    return newBuffer;
+}

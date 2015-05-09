@@ -35,6 +35,7 @@ try {
 			'database' => 'pufferpanel',
 			'username' => 'pufferpanel',
 			'password' => $pass,
+            'port' => 3306,
 			'ssl' => array(
 				'use' => false,
 				'client-key' => '/path/to/key.pem',
@@ -58,7 +59,7 @@ try {
 	$mysql->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 	$mysql->beginTransaction();
 
-	$mysqlQueries = file_get_contents("https://raw.githubusercontent.com/PufferPanel/Tools/master/installer/versions/master.sql");
+	$mysqlQueries = file_get_contents("https://raw.githubusercontent.com/PufferPanel/Tools/master/installer/versions/0.8.0-beta.sql");
 	$mysql->exec($mysqlQueries);
 
 	$query = $mysql->prepare("INSERT INTO `acp_settings` (`setting_ref`, `setting_val`) VALUES
@@ -72,8 +73,8 @@ try {
 					('sendgrid_api_key', NULL),
 					('sendmail_email', NULL),
 					('sendmail_method','php'),
-					('captcha_pub','6LdSzuYSAAAAAHkmq8LlvmhM-ybTfV8PaTgyBDII'),
-					('captcha_priv','6LdSzuYSAAAAAISSAYIJrFGGGJHi5a_V3hGRvIAz'),
+					('captcha_pub',NULL),
+					('captcha_priv',NULL),
 					('default_language', 'en'),
 					('force_online', 0),
 					('https', 0),
@@ -82,8 +83,8 @@ try {
 
 	$query->execute(array(
 		':cname' => $params['companyName'],
-		':murl' => $params['siteUrl'].'/',
-		':mwebsite' => $params['siteUrl'].'/',
+		':murl' => 'http://'.$params['siteUrl'].'/',
+		':mwebsite' => 'http://'.$params['siteUrl'].'/',
 		':aurl' => '//'.$params['siteUrl'].'/assets/'
 	));
 

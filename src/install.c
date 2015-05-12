@@ -1,9 +1,9 @@
 #define _POSIX_C_SOURCE 2
 #define _XOPEN_SOURCE 700
-#include "common.h"
-#include "install.h"
-#include "logging.h"
-#include "main.h"
+#include "headers/common.h"
+#include "headers/install.h"
+#include "headers/logging.h"
+#include "headers/main.h"
 #include <dirent.h>
 #include <mysql/mysql.h>
 #include <stdarg.h>
@@ -136,11 +136,11 @@ bool buildLang(const char* path) {
 }
 
 bool buildConfig(const char* path) {
-    char host[128] = "localhost";
+    char host[64] = "localhost";
     char database[11] = "pufferpanel";
-    char username[128] = "root";
-    char password[128];
-    char temp[128];
+    char username[64] = "root";
+    char password[64];
+    char temp[64];
     bool successful = false;
 
     logOutFile("Asking for config input, hiding this for security reasons\n");
@@ -164,7 +164,7 @@ bool buildConfig(const char* path) {
     }
 
     FILE* config;
-    config = fopen(concat(2, path, "/config.json"), "w");
+    config = fopen(concat(2, path, "/install.json"), "w");
     fprintf(config, &_binary_resources_config_json_start, host, database, username, password);
     fclose(config);
     return true;

@@ -6,10 +6,10 @@
  */
 #define _POSIX_C_SOURCE 2
 #define _XOPEN_SOURCE 700
-#include "common.h"
-#include "install.h"
-#include "logging.h"
-#include "main.h"
+#include "headers/common.h"
+#include "headers/install.h"
+#include "headers/logging.h"
+#include "headers/main.h"
 #include <dirent.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -77,9 +77,10 @@ int main(int argc, char** argv) {
         char temp[512];
         printf("Enter install path (%s)", installPath);
         fgets(temp, 512, stdin);
-        if (!isEqual(temp, "")) {
-            strcpy(installPath, temp);
+        if (!isEqual(temp, "\n")) {
+            strcpy(installPath, &temp[0]);
         }
+        printf("\n");
     }
 
     startLogging();

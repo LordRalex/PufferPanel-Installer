@@ -3,10 +3,6 @@
         "host": "%s",
         "database": "%s",
         "username": "%s",
-        "password": "%s",
-        "ssl": {
-            "use": false
-        }
-    },
-    "hash": "%s"
+        "password": "%s"
+    }
 }

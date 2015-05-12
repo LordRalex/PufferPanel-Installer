@@ -4,7 +4,7 @@
  */
 #define _POSIX_C_SOURCE 2
 #define _XOPEN_SOURCE 700
-#include "common.h"
+#include "headers/common.h"
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -18,16 +18,19 @@ char* getDistro() {
     FILE* process;
     process = popen(". /etc/os-release 2>/dev/null; echo $ID 2>/dev/null", "r");
     while (fgets(output, sizeof (output) - 1, process) != NULL) {
-        distro = output;
+        distro = &output[0];
     }
     pclose(process);
-    if (strcmp(distro, "")) {
+    if (isEqual(distro, "")) {
         distro = "unknown";
     }
     return distro;
 }
 
 bool isEqual(const char* str1, const char* str2) {
+    if ((str1 == NULL && str2 != NULL) || (str1 != NULL && str2 == NULL)) {
+        return false;
+    }
     return strcmp(str1, str2) == 0;
 }
 

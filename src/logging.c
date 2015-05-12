@@ -5,7 +5,7 @@
  * Created on May 8, 2015, 4:35 PM
  */
 
-#include "logging.h"
+#include "headers/logging.h"
 #include <dirent.h>
 #include <stdarg.h>
 #include <stdbool.h>

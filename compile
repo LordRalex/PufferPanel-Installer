@@ -1,11 +1,36 @@
-#!/bin/sh
+#!/bin/bash
+GITDIR=output/git
+COMPOSERDIR=output/build-tools
+
 echo "Build starting"
 rm -rf dist
 rm -rf resources/*.o
+rm -f resources/pufferpanel.tar
+
+if [ ! -f ${COMPOSERDIR}/composer.phar ];
+then
+    mkdir -p ${COMPOSERDIR}
+    curl -sS https://getcomposer.org/installer | php -- --install-dir=${COMPOSERDIR}
+fi
+
+if [ -d ${GITDIR}/.git ];
+then
+  git --exec-path ${GITDIR} pull --rebase
+  php ${COMPOSERDIR}/composer.phar update -d ${GITDIR}
+else
+  mkdir -p ${GITDIR}
+  git clone https://github.com/PufferPanel/PufferPanel.git ${GITDIR}
+  php ${COMPOSERDIR}/composer.phar install -d ${GITDIR}
+fi
+
+tar -pcf resources/pufferpanel.tar ${GITDIR}/.
+
 ld -r -m elf_i386 -b binary -o resources/database.o resources/database.sql
 ld -r -m elf_i386 -b binary -o resources/install.o resources/install.php
 ld -r -m elf_i386 -b binary -o resources/language.o resources/language.php
 ld -r -m elf_i386 -b binary -o resources/config.o resources/config.json
+ld -r -m elf_i386 -b binary -o resources/pufferpanel.o resources/pufferpanel.tar
+
 mkdir dist
 gcc -g -m32 -I. -o dist/ppinstaller resources/*.o src/*.c
 echo "Build process complete"

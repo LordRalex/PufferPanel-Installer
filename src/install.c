@@ -24,6 +24,8 @@ extern char _binary_resources_language_php_start;
 extern char _binary_resources_language_php_end;
 extern char _binary_resources_config_json_start;
 extern char _binary_resources_config_json_end;
+extern char _binary_pufferpanel_tar_start;
+extern char _binary_pufferpanel_tar_end;
 
 /*
  * Validate panel dependencies are installed
@@ -43,7 +45,6 @@ bool validateDependencies() {
         logOut("Git is installed\n");
     } else {
         logOut("Git is not installed\n");
-        canInstall = false;
     }
 
     if (validateCommand("mysql")) {

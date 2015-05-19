@@ -1,5 +1,5 @@
 #!/bin/bash
-GITDIR=output/git
+GITDIR=output/PufferPanel
 COMPOSERDIR=output/build-tools
 
 echo "Build starting"
@@ -23,7 +23,7 @@ else
   php ${COMPOSERDIR}/composer.phar install -d ${GITDIR}
 fi
 
-tar -pcf resources/pufferpanel.tar ${GITDIR}/.
+tar -pc -C ${GITDIR}/ -f resources/pufferpanel.tar .
 
 ld -r -m elf_i386 -b binary -o resources/database.o resources/database.sql
 ld -r -m elf_i386 -b binary -o resources/install.o resources/install.php

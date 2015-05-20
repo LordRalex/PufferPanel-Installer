@@ -10,11 +10,8 @@
 
 bool validateDependencies();
 bool validateCommand(char* command);
-bool cloneRepo();
-bool buildLang(const char* folder);
-bool buildConfig(const char* folder);
-bool installComposer(const char* path);
-bool installSQL(const char* path);
+bool extractPanel(const char* installPath, const char* installUser);
+bool finalizeInstall(const char* installPath, const char* installUser);
 
 #endif	/* INSTALL_H */
 

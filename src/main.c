@@ -6,6 +6,8 @@
  */
 #define _POSIX_C_SOURCE 2
 #define _XOPEN_SOURCE 700
+#define INSTALLERVERSION "0.0.1"
+#define PPVERSION "0.8.1-beta"
 #include "headers/common.h"
 #include "headers/install.h"
 #include "headers/logging.h"
@@ -19,13 +21,17 @@
 #include <string.h>
 
 /*
+ * Pointers to resources
+ */
+extern char _binary_pufferpanel_tar_start;
+extern char _binary_pufferpanel_tar_end;
+
+/*
  * Entry point
  */
 int main(int argc, char** argv) {
-
-    const char* ppversion = NULL;
     bool testInstall = false;
-    char* installPath = "PufferPanel";
+    char* installPath = "/srv/PufferPanel";
     char* installUser;
     char* distro = getDistro();
     if (isEqual(distro, "ubuntu")) {
@@ -56,16 +62,12 @@ int main(int argc, char** argv) {
             }
         } else if (isEqual(argv[i], "-t")) {
             testInstall = true;
-        } else if (isEqual(argv[i], "-l")) {
-            doLangOnly = true;
         } else if (isEqual(argv[i], "-v")) {
-            printf("PufferPanel Installer - Version C-0.0.1 (%s)\n", ppversion);
+            printf("PufferPanel Installer - Version C-%s (%s)\n", INSTALLERVERSION, PPVERSION);
             return (EXIT_SUCCESS);
         } else if (isEqual(argv[i], "-h")) {
             printUsage(argv[0]);
             return (EXIT_SUCCESS);
-        } else if (isEqual(argv[i], "-c")) {
-            doConfigOnly = true;
         } else {
             printUsage(argv[0]);
             return (EXIT_FAILURE);
@@ -73,18 +75,8 @@ int main(int argc, char** argv) {
         i++;
     }
 
-    if (!testInstall) {
-        char temp[512];
-        printf("Enter install path (%s)", installPath);
-        fgets(temp, 512, stdin);
-        if (!isEqual(temp, "\n")) {
-            strcpy(installPath, &temp[0]);
-        }
-        printf("\n");
-    }
-
     startLogging();
-    int returnCode = innerMain(testInstall, doLangOnly, doConfigOnly, installPath, installUser, ppversion);
+    int returnCode = innerMain(testInstall, installPath, installUser);
     closeLogging();
     return returnCode;
 }
@@ -93,22 +85,14 @@ int main(int argc, char** argv) {
  * Prints the usage line for the installer, reduces repetition
  */
 void printUsage(char* file) {
-    fprintf(stderr, "usage: %s [-dtl] [-v] [-u user] [-p path]\n", file);
+    fprintf(stderr, "usage: %s [-t] [-v] [-u user]\n", file);
 }
 
-int innerMain(bool testInstall, bool doLangOnly, bool doConfigOnly, char* installPath, char* installUser, const char* ppversion) {
-    logOut("PufferPanel Installer - Version C-0.0.1 (%s)\n", ppversion);
+int innerMain(bool testInstall, char* installPath, char* installUser) {
+    logOut("PufferPanel Installer - Version C-%s (%s)\n", INSTALLERVERSION, PPVERSION);
     logOutFile("Testing install: %s\n", testInstall ? "true" : "false");
-    logOutFile("Building languages only: %s\n", doLangOnly ? "true" : "false");
-    logOutFile("Building config only: %s\n", doConfigOnly ? "true" : "false");
     logOutFile("Install path: %s\n", installPath);
     logOutFile("Install user: %s\n", installUser);
-
-    if (doLangOnly) {
-        return (buildLang(installPath) ? EXIT_SUCCESS : EXIT_FAILURE);
-    } else if (doConfigOnly) {
-        return (buildConfig(installPath) ? EXIT_SUCCESS : EXIT_FAILURE);
-    }
 
     logOut("-----\n");
     bool result = validateDependencies();
@@ -124,48 +108,19 @@ int innerMain(bool testInstall, bool doLangOnly, bool doConfigOnly, char* instal
         return (EXIT_FAILURE);
     }
 
-    logOut("-----\nCloning panel to %s\n", installPath);
-    FILE *process;
-    char path[1024];
-    process = popen(concat(3, "git clone https://github.com/PufferPanel/PufferPanel ", installPath, " 2>&1"), "r");
-    while (fgets(path, sizeof (path) - 1, process) != NULL) {
-        logOutFile("%s\n", path);
-    }
-    if (pclose(process) != 0) {
-        logOut("Cloning failed\n");
-        return (EXIT_FAILURE);
-    }
-
-    logOut("-----\nChecking out correct version\n");
-    if (ppversion == NULL) {
-        logOut("- Dev install\n");
-    } else {
-        logOut("- %s\n", ppversion);
-    }
-
     logOut("-----\n");
-    if (!installComposer(installPath)) {
+    logOut("Extracting panel\n");
+    if (!extractPanel(installPath, installUser)) {
         return (EXIT_FAILURE);
     }
 
     logOut("-----\n");
-    if (!buildLang(installPath)) {
-        return (EXIT_FAILURE);
-    }
-
-    logOut("-----\n");
-    if (!buildConfig(installPath)) {
-        return (EXIT_FAILURE);
-    }
-
-    logOut("-----\n");
-    if (!installSQL(installPath)) {
+    if (!finalizeInstall(installPath, installUser)) {
         return (EXIT_FAILURE);
     }
 
     logOut("-----\n");
     logOut("Installation complete, thank you for choosing PufferPanel!\n");
-
 
     return (EXIT_SUCCESS);
 }

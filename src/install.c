@@ -4,6 +4,7 @@
 #include "headers/install.h"
 #include "headers/logging.h"
 #include "headers/main.h"
+#include "headers/tarread.h"
 #include <dirent.h>
 #include <mysql/mysql.h>
 #include <stdarg.h>
@@ -24,8 +25,8 @@ extern char _binary_resources_language_php_start;
 extern char _binary_resources_language_php_end;
 extern char _binary_resources_config_json_start;
 extern char _binary_resources_config_json_end;
-extern char _binary_pufferpanel_tar_start;
-extern char _binary_pufferpanel_tar_end;
+extern char _binary_resources_pufferpanel_tar_start;
+extern char _binary_resources_pufferpanel_tar_end;
 
 /*
  * Validate panel dependencies are installed
@@ -92,114 +93,31 @@ bool validateDependencies() {
  * Validates command exists on the system
  */
 bool validateCommand(char* command) {
-    if (system(concat(3, "type ", command, " 1>/dev/null 2>&1")) == 0) {
-        return true;
-    } else {
-        return false;
-    }
+    return system(concat(3, "type ", command, " 1>/dev/null 2>&1")) == 0;
 }
 
-bool buildLang(const char* path) {
-    logOut("Building language files\n");
-    DIR *dir;
-    struct dirent *ent;
-    char* fullPath = concat(2, path, "/app/languages/");
-    logOutFile("Copying language.php to %s\n", fullPath);
-
-    FILE *php;
-    php = fopen(concat(2, fullPath, "language.php"), "w");
-    fprintf(php, &_binary_resources_language_php_start);
-    fclose(php);
-
-    char* cmd = concat(3, "cd ", fullPath, " && php -f language.php ");
-    bool success = true;
-
-    if ((dir = opendir(concat(2, fullPath, "raw/"))) != NULL) {
-        while ((ent = readdir(dir)) != NULL) {
-            char* name = ent->d_name;
-            if (isEqual(name, ".") || isEqual(name, "..")) {
-                continue;
-            }
-            char lang[3];
-            strncpy(lang, name, 2);
-            lang[2] = 0;
-            logOutFile("Building %s\n", lang);
-            if (system(concat(2, cmd, lang)) != 0) {
-                success = false;
-            };
+bool extractPanel(const char* installPath, const char* installUser) {
+    char tempName[23] = "pufferpanel.tar.XXXXXX";
+    mkstemp(tempName);
+    int offset = 0;
+    FILE *out;
+    out = fopen(tempName, "w");
+    char buffer[64];
+    int size = &_binary_resources_pufferpanel_tar_end - &_binary_resources_pufferpanel_tar_start;
+    while (offset < size) {
+        int counter = 0;
+        while (counter < 64) {
+            buffer[counter] = *(&_binary_resources_pufferpanel_tar_start + offset);
+            counter++;
+            offset++;
         }
-        closedir(dir);
+        fwrite(buffer, 1, 64, out);
     }
-
-    unlink(concat(2, fullPath, "language.php"));
-    logOut("Building %s\n", success ? "successful" : "failed");
-    return success;
-}
-
-bool buildConfig(const char* path) {
-    char host[64] = "localhost";
-    char database[11] = "pufferpanel";
-    char username[64] = "root";
-    char password[64];
-    char temp[64];
-    bool successful = false;
-
-    logOutFile("Asking for config input, hiding this for security reasons\n");
-    while (!successful) {
-        printf("Enter MySQL host (%s): ", host);
-        fgets(temp, 128, stdin);
-        if (!isEqual(temp, "")) {
-            strcpy(host, temp);
-        }
-        printf("Enter MySQL username (%s): ", username);
-        fgets(temp, 128, stdin);
-        if (!isEqual(temp, "")) {
-            strcpy(username, temp);
-        }
-        printf("Enter MySQL password: ");
-        fgets(password, 128, stdin);
-
-        if (system(concat(7, "mysql -h ", host, " -u ", username, " -p", password, " 1>/dev/null 2>&1")) == 0) {
-            successful = true;
-        }
-    }
-
-    FILE* config;
-    config = fopen(concat(2, path, "/install.json"), "w");
-    fprintf(config, &_binary_resources_config_json_start, host, database, username, password);
-    fclose(config);
+    extract(tempName, installPath);
+    unlink(tempName);
     return true;
 }
 
-bool installComposer(const char* installPath) {
-    logOut("Setting up composer\n");
-    logOut("Downloading... ");
-    logOutFile("\n");
-    FILE* process;
-    char path[1024];
-    process = popen(concat(2, "php -r \"readfile('https://getcomposer.org/installer');\" | php -- --install-dir=", installPath, " 2>&1"), "r");
-    while (fgets(path, sizeof (path) - 1, process) != NULL) {
-        logOutFile("%s\n", path);
-    }
-    if (pclose(process) != 0) {
-        logOut("failed\n");
-        return false;
-    }
-    logOut("done\n");
-    logOut("Installing packages... ");
-    logOutFile("\n");
-    process = popen(concat(3, "cd ", installPath, " && php composer.phar install 2>&1"), "r");
-    while (fgets(path, sizeof (path) - 1, process) != NULL) {
-        logOutFile("%s\n", path);
-    }
-    if (pclose(process) != 0) {
-        logOut("failed\n");
-        return false;
-    }
-    logOut("done\n");
-    return true;
-}
-
-bool installSQL(const char* path) {
+bool finalizeInstall(const char* installPath, const char* installUser) {
     return true;
 };

@@ -24,6 +24,7 @@ char *strdup(const char *s);
 
 void extract(const char* file, const char* output) {
     char buffer[512];
+    char outbuffer[512];
     char name[512];
     char mode[8];
     char uid[8];
@@ -49,6 +50,8 @@ void extract(const char* file, const char* output) {
     int bufferCount;
     int fileSize;
     int done = false;
+    char old[100];
+    FILE* out;
     while (fread(name, 1, 100, in) != 0 && !done) {
         fread(mode, 1, 8, in);
         fread(uid, 1, 8, in);
@@ -75,7 +78,6 @@ void extract(const char* file, const char* output) {
             logOutFile("Detected a long file name, adjusting\n");
 
             fread(name, 1, 512, in);
-            char old[100];
             fread(old, 1, 100, in);
             fread(mode, 1, 8, in);
             fread(uid, 1, 8, in);
@@ -101,7 +103,7 @@ void extract(const char* file, const char* output) {
         if (isEOL && bufferCount <= 0) {
             fread(buffer, 1, 512, in);
             if (isEOL && isEmpty(buffer, 512)) {
-                logOutFile("EOL reached");
+                logOutFile("EOL reached\n");
                 done = true;
             }
         }
@@ -109,12 +111,17 @@ void extract(const char* file, const char* output) {
             //object is a folder
             mkpath(concat(3, output, "/", name), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
         } else {
-            //object is a file
-            FILE* out;
+            //object is a file            
             out = fopen(concat(3, output, "/", name), "w");
             while (bufferCount-- > 0) {
                 fread(buffer, 1, 512, in);
-                fwrite(buffer, 1, 512, out);
+                if (fileSize >= 512) {
+                    fwrite(buffer, 1, 512, out);
+                    fileSize -= 512;
+                } else {
+                    fwrite(buffer, 1, fileSize, out);
+                    fileSize = 0;
+                }
             }
             fclose(out);
         }
